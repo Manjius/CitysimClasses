@@ -17,12 +17,12 @@ AMLcar::AMLcar()
 	//crashed to send the signal
 	Crashed = false;
 	savespeed = Speed;
-
+	imagedelay = 0;
 	NextLocation = GetActorLocation();
 	NextRotation = GetActorRotation();
 	RotYawCounter = 0;
 	socket = new SocketClient();
-
+	IncMan = new IncidentManager();
 }
 
 void AMLcar::BeginPlay()
@@ -42,8 +42,17 @@ void AMLcar::Tick(float DeltaTime)
 
 	Super::Tick(DeltaTime);
 
-	socket->Send();
-	
+	//	socket->Send();
+	if (imagedelay < 5) {
+		imagedelay++;
+	}
+	else {
+		imagedelay = 0;
+		char* aux;
+		aux = IncMan->NoIncident();
+		socket->Send(aux);
+		free(aux);
+	}
 
 	if (Turn && !Stop) {
 
@@ -143,6 +152,8 @@ bool AMLcar::IsItClear() {
 
 void AMLcar::NotifyActorBeginOverlap(class AActor* OtherActor)
 {
+
+
 	if (OtherActor != this) {
 		Super::NotifyActorBeginOverlap(OtherActor);
 		FVector OtherActorLocation = OtherActor->GetActorLocation();
@@ -150,6 +161,14 @@ void AMLcar::NotifyActorBeginOverlap(class AActor* OtherActor)
 		FRotator Rotationchange = GetActorRotation();
 
 		ACityActor* Other = Cast<ACityActor>(OtherActor);
+
+
+		//aux = IncMan->GetInfraction(this, Other);
+		//FString Fs = FString(ANSI_TO_TCHAR(aux));
+
+		//UE_LOG(LogTemp, Warning, TEXT("crashed: %s"),*Fs);
+
+
 
 		if (Other != NULL) {
 			FVector aux = OtherActorLocation - GetActorLocation();

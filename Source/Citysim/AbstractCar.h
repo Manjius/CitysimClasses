@@ -14,7 +14,7 @@ public:
 	// Sets default values for this actor's properties
 	AAbstractCar();
 
-	int32 Speed;
+
 	float rotspeed;
 
 	// Called when the game starts or when spawned

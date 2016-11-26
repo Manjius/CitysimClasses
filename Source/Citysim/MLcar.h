@@ -1,8 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-
+#include "IncidentManager.h"
 #include "SocketClient.h"
+
 #include "AbstractCar.h"
 #include "MLcar.generated.h"
 
@@ -24,11 +25,13 @@ public:
 	bool DispY;
 	bool Stop;
 	bool Crashed;
+	int imagedelay;
 	int32 savespeed;
 	FVector NextLocation;
 	FRotator NextRotation;
 	int RotYawCounter;
 	SocketClient *socket;
+	IncidentManager *IncMan;
 
 
 

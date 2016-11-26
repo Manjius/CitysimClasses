@@ -50,30 +50,18 @@ SocketClient::~SocketClient()
 {
 }
 
+void SocketClient::Send(char* message) {
 
-void SocketClient::Send() {
-
-	char *argv[] = { "programName","127.0.0.1" };
+	char *argv[] = {message,"127.0.0.1" };
 
 
 	clientsocket(2, argv);
 
 }
 
-int __cdecl SocketClient::clientsocket(int argc, char **argv)
-{
-	WSADATA wsaData;
-	SOCKET ConnectSocket = INVALID_SOCKET;
-	struct addrinfo *result = NULL,
-		*ptr = NULL,
-		hints;
+char* SocketClient::generateimage() {
+	unsigned __int8 imagebuffer[154587];
 
-	char recvbuf[DEFAULT_BUFLEN];
-	int iResult;
-	int recvbuflen = DEFAULT_BUFLEN;
-	//GdiplusStartupInput gdiplusStartupInput;
-	//ULONG_PTR gdiplusToken;
-	//GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 	int i, j;
 	unsigned __int8 ***image = new unsigned __int8**[227];
 	for (i = 0; i < 227; i++)
@@ -83,16 +71,6 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 			image[i][j] = new unsigned __int8[3];
 	}
 
-	int ***image2 = new int**[227];
-	for (i = 0; i < 227; i++)
-		image2[i] = new int*[227];
-	for (i = 0; i < 227; i++) {
-		for (j = 0; j < 227; j++)
-			image2[i][j] = new int[3];
-	}
-
-
-
 	//get unreal screen inside hBmp
 	HWND hWnd = ::FindWindow(0, _T("Calculator"));
 	if (hWnd == NULL) {
@@ -101,7 +79,7 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 	RECT rect;
 	GetWindowRect(hWnd, &rect);
 
-
+	//get measures
 	int x1 = rect.left;
 	int y1 = rect.top;
 	int x2 = rect.right;
@@ -111,7 +89,7 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 	int height = y2 - y1;
 
 
-
+	//get bitmap
 	HDC hDc = CreateCompatibleDC(0);
 	HBITMAP hBmp = CreateCompatibleBitmap(GetDC(0), x2 - x1, y2 - y1);
 	SelectObject(hDc, hBmp);
@@ -121,7 +99,7 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 	COLORREF Test = GetPixel(hDc, 20, 20);
 
 
-
+	//write image
 	float stepw = width / 227.0f;
 	float steph = height / 227.0f;
 	int newi, newj;
@@ -138,12 +116,8 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 	}
 
 
+	//format image
 
-	printf("red = %d green = %d blue = %d ", image[20][20][0], image[20][20][1], image[20][20][2]);
-	printf("red = %d green = %d blue = %d ", image[40][40][0], image[40][40][1], image[40][40][2]);
-	printf("red = %d green = %d blue = %d ", image[100][100][0], image[100][100][1], image[100][100][2]);
-
-	unsigned __int8 imagebuffer[154587];
 
 	for (i = 0; i < 227; i++) {
 		for (j = 0; j < 227; j++) {
@@ -153,12 +127,32 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 		}
 	}
 
+	char* str = (char*)malloc(154587 * sizeof(char));
+
+	memcpy(str, imagebuffer, 154587);
+
+	return str;
+
+}
+
+
+int __cdecl SocketClient::clientsocket(int argc, char **argv)
+{
+	WSADATA wsaData;
+	SOCKET ConnectSocket = INVALID_SOCKET;
+	struct addrinfo *result = NULL,
+		*ptr = NULL,
+		hints;
+
+	char recvbuf[DEFAULT_BUFLEN];
+	int iResult;
+	int recvbuflen = DEFAULT_BUFLEN;
 
 	//get image inside buffer
 
 	// Validate the parameters
 	if (argc != 2) {
-		printf("usage: %s server-name\n", argv[0]);
+		printf("usage: %s server-name\n", "noname");
 		return 1;
 	}
 
@@ -213,13 +207,9 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 	}
 
 	// Send an initial buffer
-	unsigned __int8 killme[3];
-	killme[0] = 4;
-	killme[1] = 5;
-	killme[2] = 6;
 
 	//iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
-	iResult = send(ConnectSocket, (char*)imagebuffer, 154587, 0);
+	iResult = send(ConnectSocket, argv[0],154620, 0);
 
 	if (iResult == SOCKET_ERROR) {
 		printf("send failed with error: %d\n", WSAGetLastError());

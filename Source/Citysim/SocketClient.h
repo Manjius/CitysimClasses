@@ -12,8 +12,11 @@ public:
 	SocketClient();
 	~SocketClient();
 
-	void Send();
+	void Send(char* message);
 
 	int clientsocket(int argc, char **argv);
 
+	char* generateimage();
+
 };
+
