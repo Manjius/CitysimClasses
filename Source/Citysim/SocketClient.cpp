@@ -50,93 +50,19 @@ SocketClient::~SocketClient()
 {
 }
 
-void SocketClient::Send(char* message) {
+char* SocketClient::Send(char* message) {
 
 	char *argv[] = {message,"127.0.0.1" };
 
 
-	clientsocket(2, argv);
+	char* result=clientsocket(2, argv);
 
-}
-
-char* SocketClient::generateimage() {
-	unsigned __int8 imagebuffer[154587];
-
-	int i, j;
-	unsigned __int8 ***image = new unsigned __int8**[227];
-	for (i = 0; i < 227; i++)
-		image[i] = new unsigned __int8*[227];
-	for (i = 0; i < 227; i++) {
-		for (j = 0; j < 227; j++)
-			image[i][j] = new unsigned __int8[3];
-	}
-
-	//get unreal screen inside hBmp
-	HWND hWnd = ::FindWindow(0, _T("Calculator"));
-	if (hWnd == NULL) {
-		printf("program not found");
-	}
-	RECT rect;
-	GetWindowRect(hWnd, &rect);
-
-	//get measures
-	int x1 = rect.left;
-	int y1 = rect.top;
-	int x2 = rect.right;
-	int y2 = rect.bottom;
-
-	int width = x2 - x1;
-	int height = y2 - y1;
-
-
-	//get bitmap
-	HDC hDc = CreateCompatibleDC(0);
-	HBITMAP hBmp = CreateCompatibleBitmap(GetDC(0), x2 - x1, y2 - y1);
-	SelectObject(hDc, hBmp);
-	BitBlt(hDc, 0, 0, x2 - x1, y2 - y1, GetDC(0), x1, y1, SRCCOPY);
-
-
-	COLORREF Test = GetPixel(hDc, 20, 20);
-
-
-	//write image
-	float stepw = width / 227.0f;
-	float steph = height / 227.0f;
-	int newi, newj;
-
-	for (i = 0; i < 227; i++) {
-		for (j = 0; j < 227; j++) {
-			newi = (int)round(stepw*i);
-			newj = (int)round(steph*j);
-			Test = GetPixel(hDc, newi, newj);
-			image[i][j][0] = GetRValue(Test);
-			image[i][j][1] = GetGValue(Test);
-			image[i][j][2] = GetBValue(Test);
-		}
-	}
-
-
-	//format image
-
-
-	for (i = 0; i < 227; i++) {
-		for (j = 0; j < 227; j++) {
-			imagebuffer[(i * 227 + j) + 51529 * 0] = image[i][j][0];
-			imagebuffer[(i * 227 + j) + 51529 * 1] = image[i][j][1];
-			imagebuffer[(i * 227 + j) + 51529 * 2] = image[i][j][2];
-		}
-	}
-
-	char* str = (char*)malloc(154587 * sizeof(char));
-
-	memcpy(str, imagebuffer, 154587);
-
-	return str;
+	return result;
 
 }
 
 
-int __cdecl SocketClient::clientsocket(int argc, char **argv)
+char* SocketClient::clientsocket(int argc, char **argv)
 {
 	WSADATA wsaData;
 	SOCKET ConnectSocket = INVALID_SOCKET;
@@ -144,7 +70,7 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 		*ptr = NULL,
 		hints;
 
-	char recvbuf[DEFAULT_BUFLEN];
+	char* recvbuf=(char*)malloc(20 * sizeof(char));
 	int iResult;
 	int recvbuflen = DEFAULT_BUFLEN;
 
@@ -153,14 +79,14 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 	// Validate the parameters
 	if (argc != 2) {
 		printf("usage: %s server-name\n", "noname");
-		return 1;
+		return "00";
 	}
 
 	// Initialize Winsock
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0) {
 		printf("WSAStartup failed with error: %d\n", iResult);
-		return 1;
+		return "00";
 	}
 
 	ZeroMemory(&hints, sizeof(hints));
@@ -173,7 +99,7 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 	if (iResult != 0) {
 		printf("getaddrinfo failed with error: %d\n", iResult);
 		WSACleanup();
-		return 1;
+		return "00";
 	}
 
 	// Attempt to connect to an address until one succeeds
@@ -185,7 +111,7 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 		if (ConnectSocket == INVALID_SOCKET) {
 			printf("socket failed with error: %d\n", WSAGetLastError());
 			WSACleanup();
-			return 1;
+			return "00";
 		}
 
 		// Connect to server.
@@ -203,7 +129,7 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 	if (ConnectSocket == INVALID_SOCKET) {
 		printf("Unable to connect to server!\n");
 		WSACleanup();
-		return 1;
+		return "00";
 	}
 
 	// Send an initial buffer
@@ -215,7 +141,7 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 		printf("send failed with error: %d\n", WSAGetLastError());
 		closesocket(ConnectSocket);
 		WSACleanup();
-		return 1;
+		return "00";
 	}
 
 	printf("Bytes Sent: %d\n", iResult);
@@ -226,7 +152,7 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 		printf("shutdown failed with error: %d\n", WSAGetLastError());
 		closesocket(ConnectSocket);
 		WSACleanup();
-		return 1;
+		return "00";
 	}
 
 	// Receive until the peer closes the connection
@@ -247,8 +173,6 @@ int __cdecl SocketClient::clientsocket(int argc, char **argv)
 	closesocket(ConnectSocket);
 	WSACleanup();
 
-	//Shutdown GDI+
-	//GdiplusShutdown(gdiplusToken);
 
-	return 0;
+	return recvbuf;
 }

@@ -17,12 +17,14 @@ AMLcar::AMLcar()
 	//crashed to send the signal
 	Crashed = false;
 	savespeed = Speed;
+	//send image every X ticks
 	imagedelay = 0;
 	NextLocation = GetActorLocation();
 	NextRotation = GetActorRotation();
 	RotYawCounter = 0;
 	socket = new SocketClient();
 	IncMan = new IncidentManager();
+
 }
 
 void AMLcar::BeginPlay()
@@ -41,6 +43,8 @@ void AMLcar::Tick(float DeltaTime)
 {
 
 	Super::Tick(DeltaTime);
+	int action = 0;
+	
 
 	//	socket->Send();
 	if (imagedelay < 5) {
@@ -49,76 +53,64 @@ void AMLcar::Tick(float DeltaTime)
 	else {
 		imagedelay = 0;
 		char* aux;
-		aux = IncMan->NoIncident();
-		socket->Send(aux);
+		aux = IncMan->GetIncident();
+		//IncMan->GenerateData();
+		//aux = IncMan->GetData();
+		char* recv = socket->Send(aux);
 		free(aux);
+		char* input = "a..";
+		//UE_LOG(LogTemp, Warning, TEXT("crashed: %c"),recv);
+		//test to control car
+		if (memcmp(recv,input,1)==0) {
+			action = 1;
+		}
+		input = "d..";
+		if (memcmp(recv,input, 1)==0) {
+			action = 2;
+		}
+		input = "w..";
+		if (memcmp(recv,input, 1)==0) {
+			action = 3;
+		}
+		input = "s..";
+		if (memcmp(recv,input, 1)==0) {
+			action = 4;
+		}
 	}
 
-	if (Turn && !Stop) {
 
-		if (RotYawCounter < fabs(1)) {
-			Turn = false;
-			RotYawCounter = 0;
-		}
-		else if (NextRotation.Yaw > 0) {
-			TurnRight();
-			RotYawCounter--;
-		}
-		else if (NextRotation.Yaw < 0) {
-			TurnLeft();
-			RotYawCounter++;
-		}
+	switch (action) {
+	case 0:
+		break;
+	case 1:
+		TurnLeft();
+		TurnLeft();
+		break;
+	case 2:
+		TurnRight();
+		TurnRight();
+		break;
+	case 3:
+		Accelerate();
+		break;
+	case 4:
+		Decelerate();
+		break;
+	default:
+		// Code
+		break;
 	}
-
-	if (DispX && !Stop) {
-		if (fabs(NextLocation.X) > Speed) {
-			if (NextLocation.X > 0) {
-				SetActorLocation(FVector(GetActorLocation().X + Speed, GetActorLocation().Y, GetActorLocation().Z), false);
-				NextLocation.X = NextLocation.X - Speed;
-			}
-			if (NextLocation.X < 0) {
-				SetActorLocation(FVector(GetActorLocation().X - Speed, GetActorLocation().Y, GetActorLocation().Z), false);
-				NextLocation.X = NextLocation.X + Speed;
-			}
-		}
-		else
-			DispX = false;
-	}
-	if (DispY && !Stop) {
-		//		UE_LOG(LogTemp, Warning, TEXT("enterY"));
-		if (fabs(NextLocation.Y) > Speed) {
-			//			UE_LOG(LogTemp, Warning, TEXT("morethanspeed"));
-			if (NextLocation.Y > 0) {
-				SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y + Speed, GetActorLocation().Z), false);
-				NextLocation.Y = NextLocation.Y - Speed;
-			}
-			if (NextLocation.Y < 0) {
-				SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y - Speed, GetActorLocation().Z), false);
-				NextLocation.Y = NextLocation.Y + Speed;
-			}
-		}
-		else
-			DispY = false;
-	}
-
-	if (Stop == true) {
-		if (Speed > 0)
-			Decelerate();
-		else
-			Speed = 0;
-	}
-	else {
-		if (Speed < savespeed)
-			Accelerate();
-		else
-			Speed = savespeed;
-	}
+	
 
 	Crashed = !IsItClear();
+	if (!Crashed) {
+		IncMan->Noaccident();
+	}
 	//UE_LOG(LogTemp, Warning, TEXT("crashed: %d"),Crashed);
 
 }
 //checks for obstacles
+
 bool AMLcar::IsItClear() {
 
 	TArray<AActor*> Overlapers;
@@ -178,7 +170,17 @@ void AMLcar::NotifyActorBeginOverlap(class AActor* OtherActor)
 			{
 				if (Other->IsDrivable() == false) {
 					Crashed = true;
-				}
+					char* aux;
+					IncMan->GetInfraction(this,Other);
+					aux = IncMan->GetIncident();
+					//aux = IncMan->GetData();
+					socket->Send(aux);
+					free(aux);
+					imagedelay = 0;
+					//to not go through objects
+					if (Speed>0)
+						Speed = 0;
+				}/*
 				Rotationchange = Other->NewDirection();
 				if (Rotationchange.Yaw != 0) {
 					NextRotation = Rotationchange;
@@ -192,7 +194,7 @@ void AMLcar::NotifyActorBeginOverlap(class AActor* OtherActor)
 				if (Other->DisplacementY() == true) {
 					NextLocation.Y = aux.Y;
 					DispY = true;
-				}
+				}*/
 			}
 		}
 	}

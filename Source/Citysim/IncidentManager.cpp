@@ -15,38 +15,42 @@ IncidentManager::~IncidentManager()
 
 }
 
-char* IncidentManager::NoIncident() {
-	result.accident = 0;
+char* IncidentManager::GetIncident() {
 	GetImage();
 	char* total = Serialize(result);
 	return total;
+}
 
+//for testing
+void IncidentManager::GenerateData() {
+	GetImage();
+	Data = Serialize(result);
+}
+
+char* IncidentManager::GetData() {
+	return Data;
+}
+//for testing
+void IncidentManager::Noaccident()
+{
+	result.accident = 0;
 }
 
 char* IncidentManager::GetInfraction(ACityActor* hero, ACityActor* villain) { //hero calls the function
-
+	result.accident = 1;
 	result.speed = abs(hero->Speed - villain->Speed);
 
 
-	char* str = (char*)malloc(30 * sizeof(char));
+	char* str;// = (char*)malloc(30 * sizeof(char));
 	//str = (char*)TCHAR_TO_ANSI(*(villain->GetClass()->GetName()));
 
 	FString classname = villain->GetClass()->GetFName().ToString();
-	
-	//unsigned __int8 sizeclass = (unsigned __int8)classname.GetAllocatedSize();
-	//char aux = (char)sizeclass;
-
-
-//	UE_LOG(LogTemp, Warning, TEXT("crashed: %s"), *classname);
 
 
 	str = TCHAR_TO_ANSI(*classname);
 
-	strcpy_s(result.name,20, str);
+	memcpy(result.name,str,20);
 
-	free(str);
-	
-	
 
 	return result.name;
 		
@@ -63,16 +67,17 @@ char* IncidentManager::Serialize(incident result) {
 	char* image;// = (char*)malloc(154587 * sizeof(char));
 	
 	image=SerializeImage();
+	
 
 	char accident = (char)result.accident;
 
-	char* name = (char*)malloc(20 * sizeof(char));
+	char* name;// = (char*)malloc(20 * sizeof(char));
 
 	name = (char*)result.name;
 	
 	char* sp = (char*)result.speed;
 
-	char* test = "testing123veintelalalalalalala";
+	
 
 	memcpy(total,image,154587);
 	free(image);
@@ -80,14 +85,15 @@ char* IncidentManager::Serialize(incident result) {
 	memcpy(total+154587,Data,1);
 	Data[0] = result.speed;
 	memcpy(total + 154588, Data, 1);
-	memcpy(total+154608,test,20);
+	memcpy(total+154608,name,20);
 	
+//	free(result.image);
 
 	return total;
 
 
 }
-
+//possible_bottleneck
 void IncidentManager::GetImage() {
 	
 	int i, j;
@@ -100,6 +106,7 @@ void IncidentManager::GetImage() {
 	}
 
 	//get unreal screen inside hBmp
+	//HWND hWnd = ::FindWindow(0, _T("Citysim (64-bit, PCD3D_SM5)"));
 	HWND hWnd = ::FindWindow(0, _T("Calculator"));
 	if (hWnd == NULL) {
 		printf("program not found");
