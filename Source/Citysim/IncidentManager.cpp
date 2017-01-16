@@ -106,8 +106,8 @@ void IncidentManager::GetImage() {
 	}
 
 	//get unreal screen inside hBmp
-	//HWND hWnd = ::FindWindow(0, _T("Citysim (64-bit, PCD3D_SM5)"));
-	HWND hWnd = ::FindWindow(0, _T("Calculator"));
+	HWND hWnd = ::FindWindow(0, _T("Citysim Game Preview Standalone (64-bit/PCD3D_SM5)"));
+	//HWND hWnd = ::FindWindow(0, _T("Calculator"));
 	if (hWnd == NULL) {
 		printf("program not found");
 	}

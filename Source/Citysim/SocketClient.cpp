@@ -42,13 +42,23 @@ using namespace std;
 
 
 
+WSADATA wsaData;
+SOCKET ConnectSocket;
+struct addrinfo *result = NULL,
+	*ptr = NULL,
+	hints;
+
+char* recvbuf = (char*)malloc(20 * sizeof(char));
+int iResult;
+int recvbuflen;
+
+
 SocketClient::SocketClient()
 {
+	ConnectSocket = INVALID_SOCKET;
+	recvbuflen = DEFAULT_BUFLEN;
 }
 
-SocketClient::~SocketClient()
-{
-}
 
 char* SocketClient::Send(char* message) {
 
@@ -64,15 +74,7 @@ char* SocketClient::Send(char* message) {
 
 char* SocketClient::clientsocket(int argc, char **argv)
 {
-	WSADATA wsaData;
-	SOCKET ConnectSocket = INVALID_SOCKET;
-	struct addrinfo *result = NULL,
-		*ptr = NULL,
-		hints;
 
-	char* recvbuf=(char*)malloc(20 * sizeof(char));
-	int iResult;
-	int recvbuflen = DEFAULT_BUFLEN;
 
 	//get image inside buffer
 
@@ -175,4 +177,87 @@ char* SocketClient::clientsocket(int argc, char **argv)
 
 
 	return recvbuf;
+}
+
+char*  SocketClient::Start() {
+	// Initialize Winsock
+	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != 0) {
+		printf("WSAStartup failed with error: %d\n", iResult);
+		return "00";
+	}
+
+	ZeroMemory(&hints, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	// Resolve the server address and port
+	iResult = getaddrinfo("127.0.0.1", DEFAULT_PORT, &hints, &result);
+	if (iResult != 0) {
+		printf("getaddrinfo failed with error: %d\n", iResult);
+		WSACleanup();
+		return "00";
+	}
+
+	// Attempt to connect to an address until one succeeds
+	for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
+
+		// Create a SOCKET for connecting to server
+		ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
+			ptr->ai_protocol);
+		if (ConnectSocket == INVALID_SOCKET) {
+			printf("socket failed with error: %d\n", WSAGetLastError());
+			WSACleanup();
+			return "00";
+		}
+
+		// Connect to server.
+		iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+		if (iResult == SOCKET_ERROR) {
+			closesocket(ConnectSocket);
+			ConnectSocket = INVALID_SOCKET;
+			continue;
+		}
+		break;
+	}
+
+	freeaddrinfo(result);
+
+	if (ConnectSocket == INVALID_SOCKET) {
+		printf("Unable to connect to server!\n");
+		WSACleanup();
+		return "00";
+	}
+
+	return "1";
+}
+char* SocketClient::Continue(char* message) {
+	iResult = send(ConnectSocket, message, 154620, 0);
+
+	if (iResult == SOCKET_ERROR) {
+		printf("send failed with error: %d\n", WSAGetLastError());
+		closesocket(ConnectSocket);
+		WSACleanup();
+		return "00";
+	}
+
+	// Receive
+	iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+	
+	return recvbuf;
+
+}
+char*  SocketClient::End() {
+	iResult = shutdown(ConnectSocket, SD_SEND);
+	if (iResult == SOCKET_ERROR) {
+		printf("shutdown failed with error: %d\n", WSAGetLastError());
+		closesocket(ConnectSocket);
+		WSACleanup();
+		return "00";
+	}
+	closesocket(ConnectSocket);
+	WSACleanup();
+
+	return "1";
 }

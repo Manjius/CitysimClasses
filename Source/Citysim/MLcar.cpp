@@ -24,6 +24,8 @@ AMLcar::AMLcar()
 	RotYawCounter = 0;
 	socket = new SocketClient();
 	IncMan = new IncidentManager();
+	socket->Start();
+
 
 }
 
@@ -56,7 +58,9 @@ void AMLcar::Tick(float DeltaTime)
 		aux = IncMan->GetIncident();
 		//IncMan->GenerateData();
 		//aux = IncMan->GetData();
-		char* recv = socket->Send(aux);
+		//socket->Start();
+		char* recv = socket->Continue(aux);
+		//socket->End();
 		free(aux);
 		char* input = "a..";
 		//UE_LOG(LogTemp, Warning, TEXT("crashed: %c"),recv);
@@ -174,7 +178,7 @@ void AMLcar::NotifyActorBeginOverlap(class AActor* OtherActor)
 					IncMan->GetInfraction(this,Other);
 					aux = IncMan->GetIncident();
 					//aux = IncMan->GetData();
-					socket->Send(aux);
+					//socket->Send(aux);
 					free(aux);
 					imagedelay = 0;
 					//to not go through objects
